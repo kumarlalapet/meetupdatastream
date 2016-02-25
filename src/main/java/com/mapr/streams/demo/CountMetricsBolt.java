@@ -35,7 +35,7 @@ public class CountMetricsBolt implements IRichBolt {
             long cachedCount = count;
             count = 0;
             log.info("Got tick tuple, emitting count={"+cachedCount+"}");
-            collector.emit(new Values(String.valueOf(cachedCount).getBytes()));
+            collector.emit(tuple,new Values(String.valueOf(cachedCount)));
         } else {
             count++;
             Object value = null;

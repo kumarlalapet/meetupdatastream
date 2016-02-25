@@ -19,6 +19,7 @@ public class MeetupStreamsMetricsTopology {
 
     public static final String COUNT_FIELD = "count";
     public static final String MESSAGE_FIELD = "message";
+    public static final String PREFIX_KEY = "prefixkey";
 
     public static void main(String args[]) throws IOException, InvalidTopologyException, AuthorizationException, AlreadyAliveException {
         TopologyBuilder builder = new TopologyBuilder();
@@ -29,6 +30,10 @@ public class MeetupStreamsMetricsTopology {
 
         String zkConnString = args[0]; //localhost:5181
         String topicName = args[1];
+        String prefix = args[2];
+        String topologyName = args[3];
+
+        props.put(PREFIX_KEY,prefix);
 
         BrokerHosts hosts = new ZkHosts(zkConnString);
 
@@ -44,7 +49,10 @@ public class MeetupStreamsMetricsTopology {
         CountMetricsBolt countBolt = new CountMetricsBolt(tuplesCountPeriodInSecs);
         builder.setBolt("countBolt", countBolt, 1).globalGrouping("spout");
 
-        StormSubmitter.submitTopology("StreamsMetrics", props, builder.createTopology());
+        HBaseWriterBolt writerBolt = new HBaseWriterBolt();
+        builder.setBolt("writerBolt",writerBolt,1).shuffleGrouping("countBolt");
+
+        StormSubmitter.submitTopology(topologyName, props, builder.createTopology());
     }
 
     public static class KafkaBoltKeyValueScheme extends StringKeyValueScheme {
